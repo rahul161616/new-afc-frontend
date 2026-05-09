@@ -497,6 +497,36 @@ button {
   margin: 12px 0 6px;
 }
 
+.event-counts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 4px;
+}
+
+.event-counts-grid div {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.event-counts-grid span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.event-counts-grid strong {
+  color: var(--text);
+  font-size: 1.15rem;
+}
+
 .list-section-head h2 {
   margin: 0;
   color: var(--muted);

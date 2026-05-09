@@ -1317,6 +1317,10 @@ function EventPostCard({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isPending = group?.currentUserStatus === "PENDING";
   const isRejected = group?.currentUserStatus === "REJECTED";
+  const confirmedCount = event.confirmedCount || 0;
+  const interestedCount = event.interestedCount || 0;
+  const maybeCount = event.maybeCount || 0;
+  const remainingSlots = Math.max((event.maxPlayers || 0) - confirmedCount, 0);
 
   return (
     <article className="venue-card">
@@ -1331,6 +1335,25 @@ function EventPostCard({
         </div>
         <div className="venue-meta">
           <span>{event.requiredPlayers}/{event.maxPlayers}</span>
+        </div>
+      </div>
+
+      <div className="event-counts-grid">
+        <div>
+          <span>Going</span>
+          <strong>{confirmedCount}</strong>
+        </div>
+        <div>
+          <span>Interested</span>
+          <strong>{interestedCount}</strong>
+        </div>
+        <div>
+          <span>Maybe</span>
+          <strong>{maybeCount}</strong>
+        </div>
+        <div>
+          <span>Open</span>
+          <strong>{remainingSlots}</strong>
         </div>
       </div>
 
@@ -1381,9 +1404,9 @@ function EventPostCard({
         <div className="response-panel">
           <div className="status-chip">Details</div>
           <p className="muted-copy">Group: {group?.name || event.groupId}</p>
-          <p className="muted-copy">Confirmed: {event.confirmedCount || 0}</p>
-          <p className="muted-copy">Interested: {event.interestedCount || 0}</p>
-          <p className="muted-copy">Maybe: {event.maybeCount || 0}</p>
+          <p className="muted-copy">Going: {confirmedCount}</p>
+          <p className="muted-copy">Interested: {interestedCount}</p>
+          <p className="muted-copy">Maybe: {maybeCount}</p>
         </div>
       ) : null}
 
