@@ -92,6 +92,7 @@ function App() {
   const [signupForm, setSignupForm] = useState(INITIAL_SIGNUP_FORM);
   const [authLoading, setAuthLoading] = useState(false);
   const [authFeedback, setAuthFeedback] = useState("");
+  const [googleFeedback, setGoogleFeedback] = useState("");
 
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
@@ -294,6 +295,7 @@ function App() {
     event.preventDefault();
     setAuthLoading(true);
     setAuthFeedback("");
+    setGoogleFeedback("");
 
     try {
       const data = await login({
@@ -314,6 +316,7 @@ function App() {
     event.preventDefault();
     setAuthLoading(true);
     setAuthFeedback("");
+    setGoogleFeedback("");
 
     try {
       const data = await signup({
@@ -332,21 +335,28 @@ function App() {
     }
   }
 
-  async function handleGoogleCredential(credential) {
+  const handleGoogleCredential = useCallback(async (credential) => {
+    if (!credential) {
+      setGoogleFeedback("Google did not return a sign-in token. Try again.");
+      return;
+    }
+
     setAuthLoading(true);
     setAuthFeedback("");
+    setGoogleFeedback("Checking Google account...");
 
     try {
       const data = await googleLogin({ credential });
       writeStoredAuth(data);
       setAuth(data);
+      setGoogleFeedback("");
       navigate("dashboard");
     } catch (error) {
-      setAuthFeedback(error.message);
+      setGoogleFeedback(error.message || "Google sign-in failed.");
     } finally {
       setAuthLoading(false);
     }
-  }
+  }, []);
 
   async function handleLeaderApply() {
     setLeaderActionLoading(true);
@@ -639,6 +649,7 @@ function App() {
         onGoogleCredential={handleGoogleCredential}
         loading={authLoading}
         feedback={authFeedback}
+        googleFeedback={googleFeedback}
       />
     );
   }
@@ -784,9 +795,15 @@ function AuthPage({
   onSignupSubmit,
   onGoogleCredential,
   loading,
-  feedback
+  feedback,
+  googleFeedback
 }) {
   const googleButtonRef = useRef(null);
+  const onGoogleCredentialRef = useRef(onGoogleCredential);
+
+  useEffect(() => {
+    onGoogleCredentialRef.current = onGoogleCredential;
+  }, [onGoogleCredential]);
 
   useEffect(() => {
     let isMounted = true;
@@ -797,14 +814,18 @@ function AuthPage({
       }
 
       googleButtonRef.current.innerHTML = "";
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => {
-          if (response?.credential) {
-            onGoogleCredential(response.credential);
-          }
+      window.__afcGoogleCredentialHandler = (response) => {
+        if (response?.credential) {
+          onGoogleCredentialRef.current(response.credential);
         }
-      });
+      };
+      if (window.__afcGoogleInitializedClientId !== GOOGLE_CLIENT_ID) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (response) => window.__afcGoogleCredentialHandler?.(response)
+        });
+        window.__afcGoogleInitializedClientId = GOOGLE_CLIENT_ID;
+      }
       window.google.accounts.id.renderButton(googleButtonRef.current, {
         theme: "outline",
         size: "large",
@@ -833,7 +854,7 @@ function AuthPage({
     return () => {
       isMounted = false;
     };
-  }, [onGoogleCredential]);
+  }, []);
 
   return (
     <div className="auth-shell">
@@ -874,6 +895,7 @@ function AuthPage({
             </button>
           )}
           <span className="auth-divider">or</span>
+          {googleFeedback ? <p className="google-feedback">{googleFeedback}</p> : null}
         </div>
 
         {authMode === "login" ? (
