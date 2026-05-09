@@ -63,8 +63,8 @@ const INITIAL_EVENT_FORM = {
 };
 
 const INITIAL_LOGIN_FORM = {
-  email: "admin@afc.local",
-  password: "admin12345"
+  email: "",
+  password: ""
 };
 
 const INITIAL_SIGNUP_FORM = {
@@ -796,12 +796,6 @@ function AuthPage({
         return;
       }
 
-    if (!GOOGLE_CLIENT_ID) {
-      return () => {
-        isMounted = false;
-      };
-    }
-
       googleButtonRef.current.innerHTML = "";
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
@@ -815,6 +809,7 @@ function AuthPage({
         theme: "outline",
         size: "large",
         type: "standard",
+        text: "continue_with",
         width: googleButtonRef.current.offsetWidth || 320
       });
     }
@@ -869,12 +864,17 @@ function AuthPage({
           </button>
         </div>
 
-        {GOOGLE_CLIENT_ID ? (
-          <div className="panel stack-md">
+        <div className="panel google-auth-panel">
+          {GOOGLE_CLIENT_ID ? (
             <div className="google-button-shell" ref={googleButtonRef} />
-            <p className="inline-feedback">Use Google to sign in or create your account automatically.</p>
-          </div>
-        ) : null}
+          ) : (
+            <button className="google-fallback-button" disabled type="button">
+              <span className="google-mark">G</span>
+              <span>Continue with Google</span>
+            </button>
+          )}
+          <span className="auth-divider">or</span>
+        </div>
 
         {authMode === "login" ? (
           <form className="panel stack-lg" onSubmit={onLoginSubmit}>
@@ -902,10 +902,6 @@ function AuthPage({
               {loading ? "Signing in..." : "Login"}
             </button>
 
-            <div className="hint-block">
-              <strong>Default admin</strong>
-              <span>admin@afc.local / admin12345</span>
-            </div>
           </form>
         ) : (
           <form className="panel stack-lg" onSubmit={onSignupSubmit}>

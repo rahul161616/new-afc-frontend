@@ -412,6 +412,16 @@ button {
   color: var(--primary);
 }
 
+.google-auth-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(44, 243, 107, 0.04)),
+    rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 .google-button-shell {
   min-height: 44px;
   display: grid;
@@ -420,6 +430,53 @@ button {
 
 .google-button-shell > div {
   max-width: 100%;
+}
+
+.google-fallback-button {
+  width: 100%;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f1f1f;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.google-mark {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #f1f3f4;
+  color: #4285f4;
+  font-weight: 900;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .response-panel {
