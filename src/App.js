@@ -1455,9 +1455,7 @@ function EventsPage({
               onDeleteEvent={onDeleteEvent}
               onExpressInterest={onExpressInterest}
               onJoinGroup={onJoinGroup}
-              onShowInterests={onShowInterests}
               onEditEvent={onEditEvent}
-              selectedEventInterests={selectedEventInterests}
             />
           ))}
         </div>
@@ -1476,9 +1474,7 @@ function EventPostCard({
   onDeleteEvent,
   onExpressInterest,
   onJoinGroup,
-  onShowInterests,
-  onEditEvent,
-  selectedEventInterests
+  onEditEvent
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isPending = group?.currentUserStatus === "PENDING";
@@ -1505,18 +1501,33 @@ function EventPostCard({
       </div>
 
       <div className="event-counts-grid">
-        <div>
+        <button
+          className={event.currentUserResponseStatus === "CONFIRMED" ? "active" : ""}
+          disabled={!isMember || !canRespond}
+          type="button"
+          onClick={() => onExpressInterest(event.id, "GOING")}
+        >
           <span>Going</span>
           <strong>{confirmedCount}</strong>
-        </div>
-        <div>
+        </button>
+        <button
+          className={event.currentUserResponseStatus === "INTERESTED" ? "active" : ""}
+          disabled={!isMember || !canRespond}
+          type="button"
+          onClick={() => onExpressInterest(event.id, "INTERESTED")}
+        >
           <span>Interested</span>
           <strong>{interestedCount}</strong>
-        </div>
-        <div>
+        </button>
+        <button
+          className={event.currentUserResponseStatus === "MAYBE" ? "active" : ""}
+          disabled={!isMember || !canRespond}
+          type="button"
+          onClick={() => onExpressInterest(event.id, "MAYBE")}
+        >
           <span>Maybe</span>
           <strong>{maybeCount}</strong>
-        </div>
+        </button>
         <div>
           <span>Open</span>
           <strong>{remainingSlots}</strong>
@@ -1524,20 +1535,6 @@ function EventPostCard({
       </div>
 
       <div className="card-actions">
-        {isMember && canRespond ? (
-          <>
-            <button className="ghost-button small" type="button" onClick={() => onExpressInterest(event.id, "INTERESTED")}>
-              Interested
-            </button>
-            <button className="ghost-button small" type="button" onClick={() => onExpressInterest(event.id, "GOING")}>
-              Going
-            </button>
-            <button className="ghost-button small" type="button" onClick={() => onExpressInterest(event.id, "MAYBE")}>
-              Maybe
-            </button>
-          </>
-        ) : null}
-
         {isMember && !canRespond ? (
           <>
             <button className="ghost-button small" type="button" onClick={() => setDetailsOpen((current) => !current)}>
@@ -1559,9 +1556,6 @@ function EventPostCard({
             <button className="ghost-button small" type="button" onClick={() => onEditEvent(event)}>
               Edit
             </button>
-            <button className="ghost-button small" type="button" onClick={() => onShowInterests(event.id)}>
-              Show interests
-            </button>
             <button className="ghost-button danger small" type="button" onClick={() => onDeleteEvent(event.id)}>
               Remove post
             </button>
@@ -1576,17 +1570,6 @@ function EventPostCard({
           <p className="muted-copy">Going: {confirmedCount}</p>
           <p className="muted-copy">Interested: {interestedCount}</p>
           <p className="muted-copy">Maybe: {maybeCount}</p>
-        </div>
-      ) : null}
-
-      {selectedEventInterests[event.id]?.length ? (
-        <div className="response-panel">
-          <div className="status-chip positive">Interests</div>
-          {selectedEventInterests[event.id].map((interest) => (
-            <p className="muted-copy" key={interest.id}>
-              {interest.userName} - {interest.status}
-            </p>
-          ))}
         </div>
       ) : null}
     </article>
