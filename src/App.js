@@ -1400,7 +1400,16 @@ function EventsPage({
                 type="number"
                 min={eventForm.requiredPlayers || 1}
                 value={eventForm.maxPlayers}
-                onChange={(e) => setEventForm((current) => ({ ...current, maxPlayers: e.target.value }))}
+                onChange={(e) => {
+                  const nextMaxPlayers = e.target.value;
+                  setEventForm((current) => ({
+                    ...current,
+                    maxPlayers: nextMaxPlayers,
+                    requiredPlayers: Number(current.requiredPlayers || 0) > Number(nextMaxPlayers || 0)
+                      ? nextMaxPlayers
+                      : current.requiredPlayers
+                  }));
+                }}
                 required
               />
             </label>

@@ -42,7 +42,7 @@ async function apiFetch(path, options = {}) {
     }
 
     const message =
-      (data && (data.message || data.error)) ||
+      (data && (data.message || data.detail || data.error)) ||
       `Request failed with status ${response.status}`;
     throw new Error(message);
   }
