@@ -544,11 +544,6 @@ button {
   transform: translateY(-1px);
 }
 
-.event-counts-grid button.active {
-  border-color: rgba(44, 243, 107, 0.58);
-  background: rgba(44, 243, 107, 0.14);
-}
-
 .event-counts-grid button:disabled {
   cursor: default;
 }

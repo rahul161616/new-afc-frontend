@@ -1502,7 +1502,6 @@ function EventPostCard({
 
       <div className="event-counts-grid">
         <button
-          className={event.currentUserResponseStatus === "CONFIRMED" ? "active" : ""}
           disabled={!isMember || !canRespond}
           type="button"
           onClick={() => onExpressInterest(event.id, "GOING")}
@@ -1511,7 +1510,6 @@ function EventPostCard({
           <strong>{confirmedCount}</strong>
         </button>
         <button
-          className={event.currentUserResponseStatus === "INTERESTED" ? "active" : ""}
           disabled={!isMember || !canRespond}
           type="button"
           onClick={() => onExpressInterest(event.id, "INTERESTED")}
@@ -1520,7 +1518,6 @@ function EventPostCard({
           <strong>{interestedCount}</strong>
         </button>
         <button
-          className={event.currentUserResponseStatus === "MAYBE" ? "active" : ""}
           disabled={!isMember || !canRespond}
           type="button"
           onClick={() => onExpressInterest(event.id, "MAYBE")}
