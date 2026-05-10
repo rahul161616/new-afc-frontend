@@ -1488,6 +1488,7 @@ function EventPostCard({
   const interestedCount = event.interestedCount || 0;
   const maybeCount = event.maybeCount || 0;
   const remainingSlots = Math.max((event.maxPlayers || 0) - confirmedCount, 0);
+  const hasCountedResponse = Boolean(getResponseCountField(event.currentUserResponseStatus));
 
   return (
     <article className="venue-card">
@@ -1537,6 +1538,16 @@ function EventPostCard({
       </div>
 
       <div className="card-actions">
+        {isMember && canRespond && hasCountedResponse ? (
+          <button
+            className="ghost-button small"
+            type="button"
+            onClick={() => onExpressInterest(event.id, "NOT_AVAILABLE")}
+          >
+            Clear response
+          </button>
+        ) : null}
+
         {isMember && !canRespond ? (
           <>
             <button className="ghost-button small" type="button" onClick={() => setDetailsOpen((current) => !current)}>
