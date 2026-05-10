@@ -515,6 +515,66 @@ button {
   margin: 12px 0 6px;
 }
 
+.interest-breakdown {
+  display: grid;
+  gap: 16px;
+}
+
+.interest-summary-grid {
+  margin: 0;
+}
+
+.interest-status-list {
+  display: grid;
+  gap: 14px;
+}
+
+.interest-status-block {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.interest-status-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.interest-status-head span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 800;
+}
+
+.interest-status-head strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.interest-name-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.interest-name-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(44, 243, 107, 0.16);
+  background: rgba(44, 243, 107, 0.08);
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
 .event-counts-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));

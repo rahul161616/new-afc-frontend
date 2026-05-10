@@ -735,6 +735,8 @@ function App() {
             groups={groups}
             onEditEvent={handleEditEvent}
             onDeleteEvent={handleDeleteEvent}
+            selectedEventInterests={selectedEventInterests}
+            onShowInterests={handleShowInterests}
           />
         )}
 
@@ -1041,7 +1043,15 @@ function AuthPage({
   );
 }
 
-function HomePage({ authUser, events, groups, onEditEvent, onDeleteEvent }) {
+function HomePage({
+  authUser,
+  events,
+  groups,
+  onEditEvent,
+  onDeleteEvent,
+  selectedEventInterests,
+  onShowInterests
+}) {
   const approvedGroupIds = new Set(
     (groups || [])
       .filter((group) => isApprovedForUser(group, authUser.id))
@@ -1092,6 +1102,8 @@ function HomePage({ authUser, events, groups, onEditEvent, onDeleteEvent }) {
               group={groupsById.get(event.groupId)}
               onEditEvent={onEditEvent}
               onDeleteEvent={onDeleteEvent}
+              selectedEventInterests={selectedEventInterests}
+              onShowInterests={onShowInterests}
             />
           ))
         )}
@@ -1100,11 +1112,28 @@ function HomePage({ authUser, events, groups, onEditEvent, onDeleteEvent }) {
   );
 }
 
-function HomeEventCard({ authUser, event, group, onEditEvent, onDeleteEvent }) {
+function HomeEventCard({
+  authUser,
+  event,
+  group,
+  onEditEvent,
+  onDeleteEvent,
+  selectedEventInterests,
+  onShowInterests
+}) {
   const canManage = canManageEvent(event, group, authUser);
   const confirmedCount = event.confirmedCount || 0;
   const interestedCount = event.interestedCount || 0;
   const maybeCount = event.maybeCount || 0;
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const interests = selectedEventInterests?.[event.id] || [];
+
+  async function handleToggleDetails() {
+    if (!detailsOpen && canManage && interests.length === 0) {
+      await onShowInterests(event.id);
+    }
+    setDetailsOpen((current) => !current);
+  }
 
   return (
     <article className="home-event-card">
@@ -1136,6 +1165,9 @@ function HomeEventCard({ authUser, event, group, onEditEvent, onDeleteEvent }) {
 
       {canManage ? (
         <div className="home-event-actions">
+          <button className="ghost-button small" type="button" onClick={handleToggleDetails}>
+            {detailsOpen ? "Hide interests" : "See interests"}
+          </button>
           <button className="ghost-button small" type="button" onClick={() => onEditEvent(event)}>
             Edit details
           </button>
@@ -1144,6 +1176,8 @@ function HomeEventCard({ authUser, event, group, onEditEvent, onDeleteEvent }) {
           </button>
         </div>
       ) : null}
+
+      {detailsOpen ? <InterestBreakdown event={event} group={group} interests={interests} /> : null}
     </article>
   );
 }
@@ -1479,6 +1513,8 @@ function EventsPage({
               onExpressInterest={onExpressInterest}
               onJoinGroup={onJoinGroup}
               onEditEvent={onEditEvent}
+              selectedEventInterests={selectedEventInterests}
+              onShowInterests={onShowInterests}
             />
           ))}
         </div>
@@ -1497,7 +1533,9 @@ function EventPostCard({
   onDeleteEvent,
   onExpressInterest,
   onJoinGroup,
-  onEditEvent
+  onEditEvent,
+  selectedEventInterests,
+  onShowInterests
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isPending = group?.currentUserStatus === "PENDING";
@@ -1507,6 +1545,14 @@ function EventPostCard({
   const maybeCount = event.maybeCount || 0;
   const remainingSlots = Math.max((event.maxPlayers || 0) - confirmedCount, 0);
   const hasCountedResponse = Boolean(getResponseCountField(event.currentUserResponseStatus));
+  const interests = selectedEventInterests?.[event.id] || [];
+
+  async function handleToggleDetails() {
+    if (!detailsOpen && canManage && interests.length === 0) {
+      await onShowInterests(event.id);
+    }
+    setDetailsOpen((current) => !current);
+  }
 
   return (
     <article className="venue-card">
@@ -1567,8 +1613,8 @@ function EventPostCard({
       <div className="card-actions">
         {isMember && !canRespond ? (
           <>
-            <button className="ghost-button small" type="button" onClick={() => setDetailsOpen((current) => !current)}>
-              View
+            <button className="ghost-button small" type="button" onClick={handleToggleDetails}>
+              {detailsOpen ? "Hide details" : "View"}
             </button>
             <button
               className="primary-button"
@@ -1583,6 +1629,9 @@ function EventPostCard({
 
         {canManage ? (
           <>
+            <button className="ghost-button small" type="button" onClick={handleToggleDetails}>
+              {detailsOpen ? "Hide interests" : "See interests"}
+            </button>
             <button className="ghost-button small" type="button" onClick={() => onEditEvent(event)}>
               Edit
             </button>
@@ -1594,15 +1643,64 @@ function EventPostCard({
       </div>
 
       {detailsOpen ? (
-        <div className="response-panel">
-          <div className="status-chip">Details</div>
-          <p className="muted-copy">Group: {group?.name || event.groupId}</p>
-          <p className="muted-copy">Going: {confirmedCount}</p>
-          <p className="muted-copy">Interested: {interestedCount}</p>
-          <p className="muted-copy">Maybe: {maybeCount}</p>
-        </div>
+        <InterestBreakdown event={event} group={group} interests={interests} />
       ) : null}
     </article>
+  );
+}
+
+function InterestBreakdown({ event, group, interests }) {
+  const groupedInterests = groupInterestsByStatus(interests);
+
+  return (
+    <div className="response-panel interest-breakdown">
+      <div className="status-chip">See count</div>
+      <p className="muted-copy">Group: {group?.name || event.groupId}</p>
+
+      <div className="mini-grid interest-summary-grid">
+        <article className="metric-card">
+          <span className="metric-label">Going</span>
+          <strong>{event.confirmedCount || 0}</strong>
+        </article>
+        <article className="metric-card">
+          <span className="metric-label">Interested</span>
+          <strong>{event.interestedCount || 0}</strong>
+        </article>
+        <article className="metric-card">
+          <span className="metric-label">Maybe</span>
+          <strong>{event.maybeCount || 0}</strong>
+        </article>
+      </div>
+
+      <div className="interest-status-list">
+        {[
+          ["CONFIRMED", "Going"],
+          ["INTERESTED", "Interested"],
+          ["MAYBE", "Maybe"]
+        ].map(([status, label]) => {
+          const entries = groupedInterests.get(status) || [];
+          return (
+            <div className="interest-status-block" key={status}>
+              <div className="interest-status-head">
+                <span>{label}</span>
+                <strong>{entries.length}</strong>
+              </div>
+              {entries.length === 0 ? (
+                <p className="muted-copy">No responses yet.</p>
+              ) : (
+                <div className="interest-name-list">
+                  {entries.map((entry) => (
+                    <span className="interest-name-chip" key={entry.id}>
+                      {entry.userName}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -2071,6 +2169,27 @@ function getLeaderUpgradeUi(status, loading) {
 }
 
 function normalizeResponseStatus(status) {
+  return status === "GOING" ? "CONFIRMED" : status;
+}
+
+function groupInterestsByStatus(interests) {
+  const grouped = new Map([
+    ["CONFIRMED", []],
+    ["INTERESTED", []],
+    ["MAYBE", []]
+  ]);
+
+  (interests || []).forEach((interest) => {
+    const status = normalizeInterestStatus(interest.status);
+    if (grouped.has(status)) {
+      grouped.get(status).push(interest);
+    }
+  });
+
+  return grouped;
+}
+
+function normalizeInterestStatus(status) {
   return status === "GOING" ? "CONFIRMED" : status;
 }
 
