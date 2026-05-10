@@ -54,7 +54,7 @@ const INITIAL_VENUE_FORM = {
 
 const INITIAL_EVENT_FORM = {
   groupId: DEFAULT_GROUP_ID,
-  venueId: "",
+  venueIds: [],
   title: "",
   description: "",
   date: "",
@@ -254,10 +254,10 @@ function App() {
   }, [auth?.token, loadEvents, loadGroups, loadLeaderApplicationState, loadPendingApplications, loadVenues]);
 
   useEffect(() => {
-    if (!eventForm.venueId && venues.length > 0) {
-      setEventForm((current) => ({ ...current, venueId: venues[0].id }));
+    if ((eventForm.venueIds || []).length === 0 && venues.length > 0 && !editingEventId) {
+      setEventForm((current) => ({ ...current, venueIds: [venues[0].id] }));
     }
-  }, [eventForm.venueId, venues]);
+  }, [editingEventId, eventForm.venueIds, venues]);
 
   useEffect(() => {
     if (editingEventId) {
@@ -414,7 +414,7 @@ function App() {
 
     try {
       const payload = {
-        venueId: eventForm.venueId,
+        venueIds: eventForm.venueIds,
         title: eventForm.title.trim(),
         description: eventForm.description.trim(),
         startTime: buildIsoTimestamp(eventForm.date, eventForm.startClock),
@@ -435,7 +435,7 @@ function App() {
       setEventForm((current) => ({
         ...INITIAL_EVENT_FORM,
         groupId: current.groupId,
-        venueId: current.venueId
+        venueIds: current.venueIds
       }));
       await loadEvents();
     } catch (error) {
@@ -555,7 +555,7 @@ function App() {
     setEventFeedback("");
     setEventForm({
       groupId: event.groupId,
-      venueId: event.venueId,
+      venueIds: event.venueIds?.length ? event.venueIds : event.venueId ? [event.venueId] : [],
       title: event.title || "",
       description: event.description || "",
       date: toDateInputValue(event.startTime),
@@ -574,7 +574,7 @@ function App() {
     setEventForm((current) => ({
       ...INITIAL_EVENT_FORM,
       groupId: current.groupId,
-      venueId: current.venueId
+      venueIds: current.venueIds
     }));
   }
 
@@ -1125,6 +1125,7 @@ function HomeEventCard({
   const confirmedCount = event.confirmedCount || 0;
   const interestedCount = event.interestedCount || 0;
   const maybeCount = event.maybeCount || 0;
+  const venueLabel = formatVenueList(event);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const interests = selectedEventInterests?.[event.id] || [];
 
@@ -1142,6 +1143,7 @@ function HomeEventCard({
           <span className="status-chip">{event.status}</span>
           <h3>{event.title}</h3>
           <p className="muted-copy">{group?.name || "Joined group"}</p>
+          <p className="muted-copy">{venueLabel}</p>
         </div>
         <div className="venue-meta">
           <span>{new Date(event.startTime).toLocaleString()}</span>
@@ -1388,19 +1390,28 @@ function EventsPage({
             </label>
 
             <label className="field">
-              <span>Venue</span>
+              <span>Venues</span>
               <select
-                value={eventForm.venueId}
-                onChange={(e) => setEventForm((current) => ({ ...current, venueId: e.target.value }))}
+                multiple
+                size={Math.min(Math.max(visibleVenues.length, 3), 7)}
+                value={eventForm.venueIds}
+                onChange={(e) => {
+                  const nextVenueIds = Array.from(e.target.selectedOptions, (option) => option.value);
+                  setEventForm((current) => ({ ...current, venueIds: nextVenueIds }));
+                }}
                 required
               >
-                <option value="">Select venue</option>
                 {visibleVenues.map((venue) => (
                   <option key={venue.id} value={venue.id}>
                     {venue.name}
                   </option>
                 ))}
               </select>
+              <span className="field-hint">
+                {eventForm.venueIds.length > 0
+                  ? `${eventForm.venueIds.length} venue${eventForm.venueIds.length === 1 ? "" : "s"} selected`
+                  : "Choose one or more venues."}
+              </span>
             </label>
 
             <label className="field">
@@ -1546,6 +1557,7 @@ function EventPostCard({
   const remainingSlots = Math.max((event.maxPlayers || 0) - confirmedCount, 0);
   const hasCountedResponse = Boolean(getResponseCountField(event.currentUserResponseStatus));
   const interests = selectedEventInterests?.[event.id] || [];
+  const venueLabel = formatVenueList(event);
 
   async function handleToggleDetails() {
     if (!detailsOpen && canManage && interests.length === 0) {
@@ -1561,6 +1573,7 @@ function EventPostCard({
           <span className="status-chip">{event.status}</span>
           <h3>{event.title}</h3>
           <p className="muted-copy">{event.description || "No description"}</p>
+          <p className="muted-copy">{venueLabel}</p>
           <p className="muted-copy">
             {new Date(event.startTime).toLocaleString()} to {new Date(event.endTime).toLocaleTimeString()}
           </p>
@@ -1656,6 +1669,7 @@ function InterestBreakdown({ event, group, interests }) {
     <div className="response-panel interest-breakdown">
       <div className="status-chip">See count</div>
       <p className="muted-copy">Group: {group?.name || event.groupId}</p>
+      <p className="muted-copy">{formatVenueList(event)}</p>
 
       <div className="mini-grid interest-summary-grid">
         <article className="metric-card">
@@ -2170,6 +2184,14 @@ function getLeaderUpgradeUi(status, loading) {
 
 function normalizeResponseStatus(status) {
   return status === "GOING" ? "CONFIRMED" : status;
+}
+
+function formatVenueList(event) {
+  if (!event?.venueNames || event.venueNames.length === 0) {
+    return "Venues: not set";
+  }
+
+  return `Venues: ${event.venueNames.join(", ")}`;
 }
 
 function groupInterestsByStatus(interests) {

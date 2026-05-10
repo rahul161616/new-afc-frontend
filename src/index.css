@@ -323,6 +323,11 @@ button {
   font-weight: 700;
 }
 
+.field-hint {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
 .field input,
 .field select,
 .field textarea {
@@ -334,6 +339,11 @@ button {
   padding: 15px 16px;
   outline: none;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.field select[multiple] {
+  min-height: 164px;
+  padding: 10px;
 }
 
 .field input:focus,
