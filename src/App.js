@@ -27,6 +27,7 @@ import {
   rejectGroupMember,
   rejectLeaderApplication,
   signup,
+  updateEvent,
   updateVenue,
   writeStoredAuth
 } from "./api";
@@ -35,7 +36,8 @@ const NAV_ITEMS = [
   { key: "dashboard", label: "Home", icon: "H" },
   { key: "events", label: "Events", icon: "E" },
   { key: "groups", label: "Groups", icon: "G" },
-  { key: "venues", label: "Venues", icon: "V" }
+  { key: "venues", label: "Venues", icon: "V" },
+  { key: "settings", label: "Settings", icon: "S" }
 ];
 
 const DEFAULT_GROUP_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
@@ -100,6 +102,7 @@ function App() {
   const [eventFeedback, setEventFeedback] = useState("");
   const [eventSaving, setEventSaving] = useState(false);
   const [createdEvent, setCreatedEvent] = useState(null);
+  const [editingEventId, setEditingEventId] = useState("");
   const [selectedEventInterests, setSelectedEventInterests] = useState({});
 
   const [venues, setVenues] = useState([]);
@@ -136,6 +139,7 @@ function App() {
     setMyGroups([]);
     setLeaderApplication(null);
     setLeaderApplications([]);
+    setEditingEventId("");
     setSelectedEventInterests({});
     setSelectedGroupMembers({});
     setSelectedGroupJoinRequests({});
@@ -405,7 +409,7 @@ function App() {
     }
 
     try {
-      const data = await createEvent({
+      const payload = {
         groupId: eventForm.groupId,
         venueId: eventForm.venueId,
         title: eventForm.title.trim(),
@@ -414,10 +418,14 @@ function App() {
         endTime: buildIsoTimestamp(eventForm.date, eventForm.endClock),
         maxPlayers: Number(eventForm.maxPlayers),
         requiredPlayers: Number(eventForm.requiredPlayers)
-      });
+      };
+      const data = editingEventId
+        ? await updateEvent(editingEventId, payload)
+        : await createEvent(payload);
 
       setCreatedEvent(data);
-      setEventFeedback("Event created successfully.");
+      setEventFeedback(editingEventId ? "Event updated successfully." : "Event created successfully.");
+      setEditingEventId("");
       setEventForm((current) => ({
         ...INITIAL_EVENT_FORM,
         groupId: current.groupId,
@@ -510,6 +518,7 @@ function App() {
     try {
       await expressInterest(eventId, { status });
       setEventFeedback(`Interest updated: ${status}`);
+      await loadEvents();
     } catch (error) {
       handleAuthSensitiveError(error, setEventFeedback);
     }
@@ -524,6 +533,35 @@ function App() {
     } catch (error) {
       handleAuthSensitiveError(error, setEventFeedback);
     }
+  }
+
+  function handleEditEvent(event) {
+    setEditingEventId(event.id);
+    setCreatedEvent(null);
+    setEventFeedback("");
+    setEventForm({
+      groupId: event.groupId,
+      venueId: event.venueId,
+      title: event.title || "",
+      description: event.description || "",
+      date: toDateInputValue(event.startTime),
+      startClock: toTimeInputValue(event.startTime),
+      endClock: toTimeInputValue(event.endTime),
+      maxPlayers: event.maxPlayers || 14,
+      requiredPlayers: event.requiredPlayers || 10
+    });
+    navigate("events");
+  }
+
+  function handleCancelEventEdit() {
+    setEditingEventId("");
+    setCreatedEvent(null);
+    setEventFeedback("");
+    setEventForm((current) => ({
+      ...INITIAL_EVENT_FORM,
+      groupId: current.groupId,
+      venueId: current.venueId
+    }));
   }
 
   async function handleDeleteEvent(eventId) {
@@ -677,9 +715,16 @@ function App() {
 
       <main className="page-shell">
         {route === "dashboard" && (
-          <DashboardPage
+          <HomePage
             authUser={auth.user}
             events={events}
+            groups={groups}
+          />
+        )}
+
+        {route === "settings" && (
+          <SettingsPage
+            authUser={auth.user}
             leaderApplication={leaderApplication}
             leaderApplications={leaderApplications}
             onApplyLeader={handleLeaderApply}
@@ -700,6 +745,8 @@ function App() {
             onCreateEvent={handleEventSubmit}
             eventSaving={eventSaving}
             createdEvent={createdEvent}
+            editingEventId={editingEventId}
+            onCancelEventEdit={handleCancelEventEdit}
             feedback={eventFeedback}
             visibleVenues={visibleVenues}
             groups={selectableGroups}
@@ -711,6 +758,7 @@ function App() {
             onExpressInterest={handleEventInterest}
             onJoinGroup={handleJoinGroup}
             onShowInterests={handleShowInterests}
+            onEditEvent={handleEditEvent}
             onDeleteEvent={handleDeleteEvent}
             selectedEventInterests={selectedEventInterests}
           />
@@ -977,9 +1025,61 @@ function AuthPage({
   );
 }
 
-function DashboardPage({
+function HomePage({ authUser, events, groups }) {
+  const approvedGroupIds = new Set(
+    (groups || [])
+      .filter((group) => isApprovedForUser(group, authUser.id))
+      .map((group) => group.id)
+  );
+  const groupsById = new Map((groups || []).map((group) => [group.id, group]));
+  const joinedEvents = (events || []).filter((event) => approvedGroupIds.has(event.groupId));
+
+  return (
+    <section className="stack-xl">
+      <div className="hero-copy">
+        <span className="eyebrow">Home</span>
+        <h1>Hello, {authUser.name.split(" ")[0]}.</h1>
+        <p>Your joined-group events are shown here so you can quickly see what is coming up.</p>
+      </div>
+
+      <div className="mini-grid">
+        <article className="metric-card">
+          <span className="metric-label">Joined events</span>
+          <strong>{joinedEvents.length}</strong>
+        </article>
+        <article className="metric-card">
+          <span className="metric-label">Joined groups</span>
+          <strong>{approvedGroupIds.size}</strong>
+        </article>
+      </div>
+
+      <div className="panel stack-md">
+        <div className="panel-header">
+          <h2>Your events</h2>
+        </div>
+        {joinedEvents.length === 0 ? (
+          <p className="muted-copy">No events from your joined groups yet.</p>
+        ) : (
+          joinedEvents.slice(0, 5).map((event) => (
+            <div className="compact-event-row" key={event.id}>
+              <div>
+                <span className="status-chip">{event.status}</span>
+                <h3>{event.title}</h3>
+                <p className="muted-copy">{groupsById.get(event.groupId)?.name || "Joined group"}</p>
+              </div>
+              <div className="venue-meta">
+                <span>{new Date(event.startTime).toLocaleString()}</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function SettingsPage({
   authUser,
-  events,
   leaderApplication,
   leaderApplications,
   onApplyLeader,
@@ -994,8 +1094,8 @@ function DashboardPage({
   return (
     <section className="stack-xl">
       <div className="hero-copy">
-        <span className="eyebrow">Role dashboard</span>
-        <h1>Welcome back, {authUser.name.split(" ")[0]}.</h1>
+        <span className="eyebrow">Settings</span>
+        <h1>Account and role settings.</h1>
         <p>
           Current role: <strong>{authUser.role}</strong>. Members browse and show
           interest. Leaders post events. Admin approves leader access.
@@ -1003,10 +1103,6 @@ function DashboardPage({
       </div>
 
       <div className="mini-grid">
-        <article className="metric-card">
-          <span className="metric-label">Visible events</span>
-          <strong>{events.length}</strong>
-        </article>
         {showLeaderMetric ? (
           <article className="metric-card">
             <span className="metric-label">Leader status</span>
@@ -1092,6 +1188,8 @@ function EventsPage({
   onCreateEvent,
   eventSaving,
   createdEvent,
+  editingEventId,
+  onCancelEventEdit,
   feedback,
   visibleVenues,
   groups,
@@ -1103,6 +1201,7 @@ function EventsPage({
   onExpressInterest,
   onJoinGroup,
   onShowInterests,
+  onEditEvent,
   onDeleteEvent,
   selectedEventInterests
 }) {
@@ -1131,7 +1230,7 @@ function EventsPage({
         <h1>{canPostEvents ? "Post and manage matches" : "Browse and show interest"}</h1>
         <p>
           {canPostEvents
-            ? "Leaders and admins can create and remove event posts."
+            ? "Leaders and admins can create, update, and remove event posts."
             : "Members can view open events and express interest."}
         </p>
       </div>
@@ -1162,6 +1261,7 @@ function EventsPage({
               <select
                 value={eventForm.groupId}
                 onChange={(e) => setEventForm((current) => ({ ...current, groupId: e.target.value }))}
+                disabled={Boolean(editingEventId)}
                 required
               >
                 <option value="">Select group</option>
@@ -1247,8 +1347,14 @@ function EventsPage({
           ) : null}
 
           <button className="primary-button wide" disabled={eventSaving || invalidPlayerCounts} type="submit">
-            {eventSaving ? "Posting..." : "Post event"}
+            {eventSaving ? "Saving..." : editingEventId ? "Update event" : "Post event"}
           </button>
+
+          {editingEventId ? (
+            <button className="ghost-button wide" type="button" onClick={onCancelEventEdit}>
+              Cancel edit
+            </button>
+          ) : null}
 
           {createdEvent ? (
             <div className="response-panel">
@@ -1288,11 +1394,13 @@ function EventsPage({
               event={event}
               group={groupsById.get(event.groupId)}
               canRespond={!isMember || approvedGroupIds.has(event.groupId)}
+              canManage={canManageEvent(event, groupsById.get(event.groupId), authUser)}
               isMember={isMember}
               onDeleteEvent={onDeleteEvent}
               onExpressInterest={onExpressInterest}
               onJoinGroup={onJoinGroup}
               onShowInterests={onShowInterests}
+              onEditEvent={onEditEvent}
               selectedEventInterests={selectedEventInterests}
             />
           ))}
@@ -1307,11 +1415,13 @@ function EventPostCard({
   event,
   group,
   canRespond,
+  canManage,
   isMember,
   onDeleteEvent,
   onExpressInterest,
   onJoinGroup,
   onShowInterests,
+  onEditEvent,
   selectedEventInterests
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -1388,8 +1498,11 @@ function EventPostCard({
           </>
         ) : null}
 
-        {(authUser.role === "ADMIN" || authUser.role === "LEADER") ? (
+        {canManage ? (
           <>
+            <button className="ghost-button small" type="button" onClick={() => onEditEvent(event)}>
+              Edit
+            </button>
             <button className="ghost-button small" type="button" onClick={() => onShowInterests(event.id)}>
               Show interests
             </button>
@@ -1450,9 +1563,22 @@ function canCreateEventsForGroup(group, user) {
     return false;
   }
   if (user.role === "ADMIN" || user.role === "LEADER") {
-    return isApprovedForUser(group, user.id) || user.role === "ADMIN";
+    return true;
   }
   return isApprovedForUser(group, user.id) && ["OWNER", "ORGANIZER", "LEADER", "ADMIN"].includes(group.currentUserRole);
+}
+
+function canManageEvent(event, group, user) {
+  if (!event || !user) {
+    return false;
+  }
+  if (user.role === "ADMIN" || user.role === "LEADER") {
+    return true;
+  }
+  if (event.createdBy === user.id) {
+    return true;
+  }
+  return canCreateEventsForGroup(group, user);
 }
 
 function GroupsPage({
@@ -1805,6 +1931,20 @@ function navigate(route) {
 
 function buildIsoTimestamp(date, time) {
   return `${date}T${time}:00Z`;
+}
+
+function toDateInputValue(value) {
+  if (!value) {
+    return "";
+  }
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function toTimeInputValue(value) {
+  if (!value) {
+    return "";
+  }
+  return new Date(value).toISOString().slice(11, 16);
 }
 
 function getLeaderUpgradeUi(status, loading) {

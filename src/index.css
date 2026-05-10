@@ -361,6 +361,10 @@ button {
   width: 100%;
 }
 
+.ghost-button.wide {
+  width: 100%;
+}
+
 .ghost-button {
   background: rgba(255, 255, 255, 0.03);
   color: var(--text);
@@ -525,6 +529,23 @@ button {
 .event-counts-grid strong {
   color: var(--text);
   font-size: 1.15rem;
+}
+
+.compact-event-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.compact-event-row:last-child {
+  border-bottom: 0;
+}
+
+.compact-event-row h3 {
+  margin: 10px 0 4px;
 }
 
 .list-section-head h2 {

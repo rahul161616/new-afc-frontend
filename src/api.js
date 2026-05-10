@@ -147,6 +147,13 @@ export function createEvent(payload) {
   });
 }
 
+export function updateEvent(eventId, payload) {
+  return apiFetch(`/admin/events/${eventId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
 export function fetchEvents() {
   return apiFetch("/events");
 }
