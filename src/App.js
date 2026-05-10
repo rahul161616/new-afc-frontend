@@ -260,6 +260,10 @@ function App() {
   }, [eventForm.venueId, venues]);
 
   useEffect(() => {
+    if (editingEventId) {
+      return;
+    }
+
     const preferredGroupId = (myGroups[0] || groups[0])?.id;
     if (!preferredGroupId) {
       return;
@@ -271,7 +275,7 @@ function App() {
     setVenueForm((current) => (
       current.groupId === DEFAULT_GROUP_ID ? { ...current, groupId: preferredGroupId } : current
     ));
-  }, [groups, myGroups]);
+  }, [editingEventId, groups, myGroups]);
 
   const visibleVenues = useMemo(
     () => venues.filter((venue) => venue.isActive !== false),
@@ -410,7 +414,6 @@ function App() {
 
     try {
       const payload = {
-        groupId: eventForm.groupId,
         venueId: eventForm.venueId,
         title: eventForm.title.trim(),
         description: eventForm.description.trim(),
@@ -419,6 +422,9 @@ function App() {
         maxPlayers: Number(eventForm.maxPlayers),
         requiredPlayers: Number(eventForm.requiredPlayers)
       };
+      if (!editingEventId) {
+        payload.groupId = eventForm.groupId;
+      }
       const data = editingEventId
         ? await updateEvent(editingEventId, payload)
         : await createEvent(payload);
