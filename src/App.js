@@ -1999,21 +1999,28 @@ function navigate(route) {
 }
 
 function buildIsoTimestamp(date, time) {
-  return `${date}T${time}:00Z`;
+  return new Date(`${date}T${time}:00`).toISOString();
 }
 
 function toDateInputValue(value) {
   if (!value) {
     return "";
   }
-  return new Date(value).toISOString().slice(0, 10);
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function toTimeInputValue(value) {
   if (!value) {
     return "";
   }
-  return new Date(value).toISOString().slice(11, 16);
+  const date = new Date(value);
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 function getLeaderUpgradeUi(status, loading) {
