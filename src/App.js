@@ -719,6 +719,8 @@ function App() {
             authUser={auth.user}
             events={events}
             groups={groups}
+            onEditEvent={handleEditEvent}
+            onDeleteEvent={handleDeleteEvent}
           />
         )}
 
@@ -1025,7 +1027,7 @@ function AuthPage({
   );
 }
 
-function HomePage({ authUser, events, groups }) {
+function HomePage({ authUser, events, groups, onEditEvent, onDeleteEvent }) {
   const approvedGroupIds = new Set(
     (groups || [])
       .filter((group) => isApprovedForUser(group, authUser.id))
@@ -1033,13 +1035,21 @@ function HomePage({ authUser, events, groups }) {
   );
   const groupsById = new Map((groups || []).map((group) => [group.id, group]));
   const joinedEvents = (events || []).filter((event) => approvedGroupIds.has(event.groupId));
+  const nextEvent = joinedEvents[0];
 
   return (
     <section className="stack-xl">
-      <div className="hero-copy">
-        <span className="eyebrow">Home</span>
-        <h1>Hello, {authUser.name.split(" ")[0]}.</h1>
-        <p>Your joined-group events are shown here so you can quickly see what is coming up.</p>
+      <div className="home-hero">
+        <div className="hero-copy">
+          <span className="eyebrow">Home</span>
+          <h1>Hello, {authUser.name.split(" ")[0]}.</h1>
+          <p>Your joined-group events are shown here so you can quickly see what is coming up.</p>
+        </div>
+        <div className="home-next-match">
+          <span className="metric-label">Next event</span>
+          <strong>{nextEvent ? nextEvent.title : "No event yet"}</strong>
+          <p>{nextEvent ? new Date(nextEvent.startTime).toLocaleString() : "Joined group events will appear here."}</p>
+        </div>
       </div>
 
       <div className="mini-grid">
@@ -1061,20 +1071,57 @@ function HomePage({ authUser, events, groups }) {
           <p className="muted-copy">No events from your joined groups yet.</p>
         ) : (
           joinedEvents.slice(0, 5).map((event) => (
-            <div className="compact-event-row" key={event.id}>
-              <div>
-                <span className="status-chip">{event.status}</span>
-                <h3>{event.title}</h3>
-                <p className="muted-copy">{groupsById.get(event.groupId)?.name || "Joined group"}</p>
-              </div>
-              <div className="venue-meta">
-                <span>{new Date(event.startTime).toLocaleString()}</span>
-              </div>
-            </div>
+            <HomeEventCard
+              key={event.id}
+              authUser={authUser}
+              event={event}
+              group={groupsById.get(event.groupId)}
+              onEditEvent={onEditEvent}
+              onDeleteEvent={onDeleteEvent}
+            />
           ))
         )}
       </div>
     </section>
+  );
+}
+
+function HomeEventCard({ authUser, event, group, onEditEvent, onDeleteEvent }) {
+  const canManage = canManageEvent(event, group, authUser);
+  const confirmedCount = event.confirmedCount || 0;
+  const interestedCount = event.interestedCount || 0;
+  const maybeCount = event.maybeCount || 0;
+
+  return (
+    <article className="home-event-card">
+      <div className="home-event-main">
+        <div>
+          <span className="status-chip">{event.status}</span>
+          <h3>{event.title}</h3>
+          <p className="muted-copy">{group?.name || "Joined group"}</p>
+        </div>
+        <div className="venue-meta">
+          <span>{new Date(event.startTime).toLocaleString()}</span>
+        </div>
+      </div>
+
+      <div className="home-event-stats">
+        <span>{confirmedCount} going</span>
+        <span>{interestedCount} interested</span>
+        <span>{maybeCount} maybe</span>
+      </div>
+
+      {canManage ? (
+        <div className="card-actions">
+          <button className="ghost-button small" type="button" onClick={() => onEditEvent(event)}>
+            Edit details
+          </button>
+          <button className="ghost-button danger small" type="button" onClick={() => onDeleteEvent(event.id)}>
+            Delete
+          </button>
+        </div>
+      ) : null}
+    </article>
   );
 }
 
