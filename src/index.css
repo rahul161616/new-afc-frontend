@@ -517,7 +517,7 @@ button {
 
 .event-counts-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin: 16px 0 4px;
 }
@@ -561,6 +561,15 @@ button {
 .event-counts-grid strong {
   color: var(--text);
   font-size: 1.15rem;
+}
+
+.event-counts-grid .clear-response-tile strong {
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.event-counts-grid .clear-response-tile:disabled {
+  opacity: 0.48;
 }
 
 .home-hero {

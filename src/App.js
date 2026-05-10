@@ -1534,6 +1534,15 @@ function EventPostCard({
           <span>Maybe</span>
           <strong>{maybeCount}</strong>
         </button>
+        <button
+          className="clear-response-tile"
+          disabled={!isMember || !canRespond || !hasCountedResponse}
+          type="button"
+          onClick={() => onExpressInterest(event.id, "NOT_AVAILABLE")}
+        >
+          <span>Clear</span>
+          <strong>Response</strong>
+        </button>
         <div>
           <span>Open</span>
           <strong>{remainingSlots}</strong>
@@ -1541,16 +1550,6 @@ function EventPostCard({
       </div>
 
       <div className="card-actions">
-        {isMember && canRespond && hasCountedResponse ? (
-          <button
-            className="ghost-button small"
-            type="button"
-            onClick={() => onExpressInterest(event.id, "NOT_AVAILABLE")}
-          >
-            Clear response
-          </button>
-        ) : null}
-
         {isMember && !canRespond ? (
           <>
             <button className="ghost-button small" type="button" onClick={() => setDetailsOpen((current) => !current)}>
