@@ -149,7 +149,7 @@ export function createEvent(payload) {
 
 export function updateEvent(eventId, payload) {
   return apiFetch(`/admin/events/${eventId}`, {
-    method: "PUT",
+    method: "PATCH",
     body: JSON.stringify(payload)
   });
 }
