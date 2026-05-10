@@ -516,9 +516,14 @@ function App() {
     setEventFeedback("");
 
     try {
-      await expressInterest(eventId, { status });
+      const response = await expressInterest(eventId, { status });
+      const updatedStatus = response?.status || status;
+      setEvents((currentEvents) =>
+        currentEvents.map((event) =>
+          event.id === eventId ? applyEventResponseUpdate(event, updatedStatus) : event
+        )
+      );
       setEventFeedback(`Interest updated: ${status}`);
-      await loadEvents();
     } catch (error) {
       handleAuthSensitiveError(error, setEventFeedback);
     }
@@ -2028,6 +2033,51 @@ function getLeaderUpgradeUi(status, loading) {
         description: "Leaders can add and remove event posts. Your request goes to admin for approval."
       };
   }
+}
+
+function normalizeResponseStatus(status) {
+  return status === "GOING" ? "CONFIRMED" : status;
+}
+
+function getResponseCountField(status) {
+  switch (normalizeResponseStatus(status)) {
+    case "CONFIRMED":
+      return "confirmedCount";
+    case "INTERESTED":
+      return "interestedCount";
+    case "MAYBE":
+      return "maybeCount";
+    default:
+      return null;
+  }
+}
+
+function applyEventResponseUpdate(event, status) {
+  const previousField = getResponseCountField(event.currentUserResponseStatus);
+  const nextStatus = normalizeResponseStatus(status);
+  const nextField = getResponseCountField(nextStatus);
+
+  if (normalizeResponseStatus(event.currentUserResponseStatus) === nextStatus) {
+    return {
+      ...event,
+      currentUserResponseStatus: nextStatus
+    };
+  }
+
+  const updatedEvent = {
+    ...event,
+    currentUserResponseStatus: nextStatus
+  };
+
+  if (previousField) {
+    updatedEvent[previousField] = Math.max(Number(updatedEvent[previousField] || 0) - 1, 0);
+  }
+
+  if (nextField) {
+    updatedEvent[nextField] = Number(updatedEvent[nextField] || 0) + 1;
+  }
+
+  return updatedEvent;
 }
 
 export default App;
