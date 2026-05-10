@@ -1106,13 +1106,22 @@ function HomeEventCard({ authUser, event, group, onEditEvent, onDeleteEvent }) {
       </div>
 
       <div className="home-event-stats">
-        <span>{confirmedCount} going</span>
-        <span>{interestedCount} interested</span>
-        <span>{maybeCount} maybe</span>
+        <div>
+          <strong>{confirmedCount}</strong>
+          <span>Going</span>
+        </div>
+        <div>
+          <strong>{interestedCount}</strong>
+          <span>Interested</span>
+        </div>
+        <div>
+          <strong>{maybeCount}</strong>
+          <span>Maybe</span>
+        </div>
       </div>
 
       {canManage ? (
-        <div className="card-actions">
+        <div className="home-event-actions">
           <button className="ghost-button small" type="button" onClick={() => onEditEvent(event)}>
             Edit details
           </button>
