@@ -523,7 +523,10 @@ function App() {
           event.id === eventId ? applyEventResponseUpdate(event, updatedStatus) : event
         )
       );
-      setEventFeedback(`Interest updated: ${status}`);
+      if (updatedStatus === "NOT_AVAILABLE") {
+        await loadEvents();
+      }
+      setEventFeedback(updatedStatus === "NOT_AVAILABLE" ? "Response cleared." : `Interest updated: ${status}`);
     } catch (error) {
       handleAuthSensitiveError(error, setEventFeedback);
     }
